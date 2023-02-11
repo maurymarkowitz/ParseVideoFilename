@@ -37,7 +37,7 @@ imdb
 :Contains the movie's imdb code, if found.
 
 season
-:Contains the season number if this is a TV show and a season number was found. Season and episode numbers are sometimes entered as Roman numberals or spelled out like "season one". These values will be converted to 
+:Contains the season number if this is a TV show and a season number was found. Season and episode numbers are sometimes entered as Roman numberals or spelled out like "season one". These values will be converted to digits.
 
 disk
 :Disk number from a collection. Similar to season.
@@ -49,7 +49,7 @@ end_episode
 :If an episode range was found, like Eaa-Ebb, this is the end value, bb. episode has the aa value.
 
 part
-:If the show or movie has been broken into multiple files, this is the part number. Part numbers are often found in the file names as letters, like 'S01E10a' and 'S01E10b', which are converted to numbers in this value.
+:If the show or movie has been broken into multiple files, this is the part number. Part numbers are often found in the file names as letters, like 'S01E10a' and 'S01E10b', which are converted to digits.
 
 episode_name
 :Name of the individual episode, if present.
