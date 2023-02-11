@@ -34,10 +34,10 @@ year
 :Present if this is a movie and a year was found in the filename.
 
 imdb
-:Contains the imdb code, if present.
+:Contains the movie's imdb code, if found.
 
 season
-:Contains the season number if this is a TV show and a season number was found.
+:Contains the season number if this is a TV show and a season number was found. Season and episode numbers are sometimes entered as Roman numberals or spelled out like "season one". These values will be converted to 
 
 disk
 :Disk number from a collection. Similar to season.
