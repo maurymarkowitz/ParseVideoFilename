@@ -7,7 +7,7 @@
  * @brief Various functions to ease use of NSRegularExpression
  *
  * This file contains helper methods that make NSRegularExpression slightly easier to use
- * when your pattern contains named capture groups. Is is not, not is it meant to be, very
+ * when your pattern contains named capture groups. Is is not, nor is it meant to be, very
  * robust. For instance, it there are multiple hits for a given named group, it will only
  * return one value for that key. This is in keeping with the use-case for file names where
  * more than one episode, for instance, is likely going to fail anyway.
