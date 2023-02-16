@@ -12,14 +12,14 @@ import Foundation
 public struct ParseVideoFilename {
     /// VERSION string
     public private(set) var VERSION = "1.0"
-
+    
     /**
      * Returns a dictionary of [String: String] containing any matches against the list of patterns.
      * This is the only public method.
      *
      * @param list a node in the list to traverse.
      * @return the previous node.
-    */
+     */
     public static func parse(_ filename: String, defaults: [String: String] = [String: String]()) -> [String: String]
     {
         // set up the return dictionary
@@ -42,7 +42,7 @@ public struct ParseVideoFilename {
             result["dir"] = dir
         }
         file = (filename as NSString).deletingPathExtension
-
+        
         // these ones confuse the "part" pattern
         file = file.replacingOccurrences(of: "480p", with: "")
         file = file.replacingOccurrences(of: "720p", with: "")
@@ -53,32 +53,26 @@ public struct ParseVideoFilename {
         file = file.replacingOccurrences(of: "x264", with: "")
         file = file.replacingOccurrences(of: "x265", with: "")
         
-        // now look for any spelled-out numbers like "twenty one" or roman
-        // numerals found in the season or episode values
-        let pattern = #"""
-        (?<=d|dvd|disc|disk|s|se|season|e|ep|episode|p|part|day)[\s._-](?<roman>M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))(?=[\s._-])
-        """#
-
-        
-        
-        //
+        // now look for any roman numerals found in disk/season/episode values
         // NOTE: what about years for movies? this only looks in TV fields
-        let prefix = #"(?:d|dvd|disc|disk|s|se|season|e|ep|episode)[\s._-]+"#
-        let postfix = #"(?:day|part)[\s._-]+"#
+        let roman = #"""
+        (d|dvd|disc|disk|s|se|season|e|ep|episode|p|part|day)[\s._-](?<roman>M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))(?=[\s._-])
+        """#
+        // if we found any, clip it out and replace it with the numeric value
+        // of course, work backwards...
         
         
-        // look for spelled-out numbers
-        let nums = "zero|one|two|three|five|(?:twen|thir|four|fif|six|seven|nine)(?:|teen|ty)|eight(?:|een|y)|ten|eleven|twelve"
-        let mult = "hundred|thousand|(?:m|b|tr)illion"
-        let num_regex = #"((?:(?:$single|$mult)(?:$single|$mult|\s|,|and|&)+)?(?:$single|$mult))"#
-        //let roman = "[MC]*[DC]*[CX]*[LX]*[XI]*[VI]*"
-
-        //let prefix = "(?:d|dvd|disc|disk|s|se|season|e|ep|episode)[\s._-]+"
-        //let postfix = "(?:day|part)[\s._-]+"
         
-        // get the list of patterns
+        // and do the same for spelled-out numbers
+        let units = "zero|one|two|three|five|(?:twen|thir|four|fif|six|seven|nine)(?:|teen|ty)|eight(?:|een|y)|ten|eleven|twelve"
+        let mults = "hundred|thousand|(?:m|b|tr)illion"
+        let nums = #"((?:(?:\#(units)|\#(mults))(?:\#(units)|\#(mults)|\s|,|and|&)+)?(?:\#(units)|\#(mults)))"#
+        
+        
+        
+        // get the list of movie and show patterns
         let patterns = setupPatterns()
-
+        
         // and try each one in turn
         var foundSomething = false
         for pattern in patterns {
@@ -105,11 +99,11 @@ public struct ParseVideoFilename {
         // look for TV episodes in the common season/episode format, SssEee. Example:
         // Series Name.S01E02..avi
         patterns.append(#"^(?:(?<name>.*?)[\/\s._-]+)?(?:d|dvd|disc|disk)[\s._]?(?<dvd>\d{1,2})[x\/\s._-]*(?:e|ep|episode)[\s._]?(?<episode>\d{1,2}(?:\.\d{1,2})?)(?:-?(?:(?:e|ep)[\s._]*)?(?<endepisode>\d{1,2}))?(?:[\s._]?(?:p|part)[\s._]?(?<part>\d+))?(?<subepisode>[a-z])?(?:[\/\s._-]*(?<episodename>[^\/]+?))?$"#)
-
+        
         // match against IMDB movie codes in the name. Example:
         // Movie Name [1996] [imdb 1234567].mkv
         patterns.append(#"^(?<movie>.*?)?(?:[\/\s._-]*(?<openb>\[)?(?<year>(?:19|20)\d{2})(?(<openb>)\]))?(?:[\/\s._-]*(?<openc>\[)?(?:(?:imdb|tt)[\s._-]*)*(?<imdb>\d{7})(?(<openc>)\]))(?:[\s._-]*(?<title>[^\/]+?))?$"#)
-
+        
         // look for movies with a year in the title. Example:
         // Movie Name [1988].avi
         patterns.append(#"^(?:(?<movie>.*?)[\/\s._-]*)?(?<openb>\[\(?)?(?<year>(?:19|20)\d{2})(?(<openb>)\)?\])(?:[\s._-]*(?<title>[^\/]+?))?$"#)
@@ -121,22 +115,22 @@ public struct ParseVideoFilename {
         // look for television shows with a season and episode using "sxee" format. Example:
         // Series Name.1x02.Episode name.avi
         patterns.append(#"^(?:(?<name>.*?)[\/\s._-]*)?(?<openb>\[)?(?<season>\d{1,2})[x\/](?<episode>\d{1,2})(?:-(?:\k<season>x)?(?<endepisode>\d{1,2}))?(?(<openb>)\])(?:[\s._-]*(?<episodename>[^\/]+?))?$"#)
-
+        
         // look for television shows with a season only. Example:
         // Series Name.s1.Episode name.m4v
         patterns.append(#"^(?:(?<name>.*?)[\/\s._-]+)?(?:s|se|season|series)[\s._]?(?<season>\d{1,2})(?:[\/\s._-]*(?<episodename>[^\/]+?))?$"#)
-
+        
         // look for television shows with an episode only. Example:
         // Series Name.Episode 02.Episode name.mov
         patterns.append(#"^(?:(?<name>.*?)[\/\s._-]*)?(?:(?:e|ep|episode)[\s._]?)?(?<episode>\d{1,2})(?:-(?:e|ep)?(?<endepisode>\d{1,2}))?(?:(?:p|part)(?<part>\d+))?(?<subepisode>[a-z])?(?:[\/\s._-]*(?<episodename>[^\/]+?))?$"#)
         
         // and if nothing else matches, assume its a movie and the name is the entire match
         patterns.append(#"^(?<movie>.*)$"#)
-
+        
         // that's it!
         return patterns
     }
-
+    
     /**
      * Looks for any matching groups in the filename and adds them to the passed-in dictionary.
      *
@@ -144,7 +138,7 @@ public struct ParseVideoFilename {
      * @param inFilename A string containing the filename to scan.
      * @param addTo A [String:String] dictionary of results.
      * @return true if the match was successful.
-    */
+     */
     static func findMatches(withPattern pattern: String, inFilename string: String, addTo result: inout [String:String]) -> Bool
     {
         // make a mutatable version of the results
@@ -155,20 +149,20 @@ public struct ParseVideoFilename {
         if values.count > 0 {
             // copy over everything we got
             result = result.merging(values) { (_, new) in new }
-
+            
             // and mark this as a success
             result["didParse"] = "1"
             gotIt = true
         }
         return gotIt
     }
-        
+    
     /**
-    * Converts a roman numeral string to an Int. Returns nil if it can't be converted.
-    *
-    * This does not support "large numbers" as these will not appear in the filenames,
-    * where the largest numbers we expect are year numbers less than 3999
-    */
+     * Converts a roman numeral string to an Int. Returns nil if it can't be converted.
+     *
+     * This does not support "large numbers" as these will not appear in the filenames,
+     * where the largest numbers we expect are year numbers less than 3999
+     */
     func romanNumeralValue(_ romanNumber: String) -> Int?  {
         guard romanNumber.range(of: "^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$", options: .regularExpression) != nil else {
             return nil
